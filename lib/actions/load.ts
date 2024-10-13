@@ -26,7 +26,7 @@ interface Port {
 
 export const loadPortData = async (): Promise<Port[]> => {
   try {
-    const response = await fetch('/merged_file.csv');
+    const response = await fetch('/result.csv');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
