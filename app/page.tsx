@@ -1,101 +1,182 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import React, { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { loadPortData } from "../lib/actions/load"; // Assume this function is implemented to load CSV data
+
+// Dynamically import the Map component to avoid SSR issues
+const Map = dynamic(() => import("../components/shared/Map"), { ssr: false });
+
+// Type definitions
+interface Port {
+  portid: string;
+  ISO3: string;
+  continent: string;
+  lat: number;
+  lon: number;
+  vessel_count_total: number;
+  // Add other fields as needed
+}
+
+const getColor = (vesselCount: number): string => {
+  if (vesselCount > 2000) return "#8B0000"; // Dark Red
+  if (vesselCount > 1500) return "#FF0000"; // Red
+  if (vesselCount > 1000) return "#FFA500"; // Orange
+  if (vesselCount > 500) return "#FFFF00"; // Yellow
+  if (vesselCount > 250) return "#9ACD32"; // Yellow Green
+  return "#008000"; // Green
+};
+
+const Dashboard: React.FC = () => {
+  const [portsData, setPortsData] = useState<Port[]>([]);
+  const [selectedPort, setSelectedPort] = useState<Port | null>(null);
+  const [disruptionScenario, setDisruptionScenario] = useState<string>("");
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const data = await loadPortData();
+      setPortsData(data);
+    };
+    fetchData();
+  }, []);
+
+  const handlePortClick = (port: Port) => {
+    setSelectedPort(port);
+  };
+
+  const runSimulation = () => {
+    // Simplified simulation logic
+    const updatedPorts = portsData.map((port) => {
+      if (port.portid.toLowerCase() === disruptionScenario.toLowerCase()) {
+        return {
+          ...port,
+          vessel_count_total: Math.max(0, port.vessel_count_total - 100),
+        };
+      }
+      return port;
+    });
+
+    // Simple load balancing
+    const disruptedPort = updatedPorts.find(
+      (p) => p.portid.toLowerCase() === disruptionScenario.toLowerCase()
+    );
+    if (disruptedPort) {
+      const vesselToRedistribute = Math.floor(
+        disruptedPort.vessel_count_total * 0.3
+      );
+      disruptedPort.vessel_count_total -= vesselToRedistribute;
+
+      const otherPorts = updatedPorts.filter(
+        (p) => p.portid !== disruptedPort.portid
+      );
+      const totalVessels = otherPorts.reduce(
+        (sum, p) => sum + p.vessel_count_total,
+        0
+      );
+
+      otherPorts.forEach((port) => {
+        const share = port.vessel_count_total / totalVessels;
+        port.vessel_count_total += Math.floor(vesselToRedistribute * share);
+      });
+    }
+
+    setPortsData(updatedPorts);
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="flex flex-col h-screen bg-gray-900 text-white p-4">
+      <h1 className="text-2xl font-bold mb-4">PORTCHAIN Dashboard</h1>
+      <div className="flex flex-1 space-x-4">
+        <div className="w-2/3 bg-gray-800 rounded-lg p-4">
+          <Map
+            portsData={portsData}
+            handlePortClick={handlePortClick}
+            getColor={getColor}
+          />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <div className="w-1/3 space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Port Details</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {selectedPort ? (
+                <div>
+                  <p>
+                    <strong>Port ID:</strong> {selectedPort.portid}
+                  </p>
+                  <p>
+                    <strong>Country:</strong> {selectedPort.ISO3}
+                  </p>
+                  <p>
+                    <strong>Continent:</strong> {selectedPort.continent}
+                  </p>
+                  <p>
+                    <strong>Total Vessels:</strong>{" "}
+                    {selectedPort.vessel_count_total}
+                  </p>
+                </div>
+              ) : (
+                <p>Select a port on the map for details</p>
+              )}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Disruption Simulation</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="disruptionScenario">Port to Disrupt:</Label>
+                <Input
+                  id="disruptionScenario"
+                  placeholder="Enter port ID"
+                  value={disruptionScenario}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setDisruptionScenario(e.target.value)
+                  }
+                />
+                <Button onClick={runSimulation}>Run Simulation</Button>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Vessel Count Overview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={portsData.slice(0, 10)}>
+                  {" "}
+                  // Showing only top 10 ports
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="portid" />
+                  <YAxis />
+                  <RechartsTooltip />
+                  <Legend />
+                  <Bar dataKey="vessel_count_total" fill="#8884d8" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
-}
+};
+
+export default Dashboard;
