@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Next.js and Flask Project
 
-## Getting Started
+This project consists of a Next.js application and a Flask server running concurrently. A shell script (`run.sh`) is provided to easily start both applications.
 
-First, run the development server:
+## Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Before running the project, ensure you have the following installed:
+
+- Node.js and npm (for Next.js)
+- Python (for Flask)
+- Bash shell (available by default on most Unix-based systems, including macOS and Linux)
+
+## Project Structure
+
+The project should have the following structure:
+
+```
+project_root/
+│
+├── nextjs_app/        # Your Next.js application
+│   └── ...
+│
+├── loadbalancer.py    # Your Flask server script
+├── run.sh             # Script to run both applications
+└── README.md          # This file
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Running the Applications
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+To run both the Next.js app and Flask server simultaneously:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Open a terminal and navigate to the project root directory.
+2. Make sure the `run.sh` script is executable:
+   ```
+   chmod +x run.sh
+   ```
+3. Run the script:
+   ```
+   ./run.sh
+   ```
 
-## Learn More
+The script will start both applications:
+- The Next.js app will run on its default port (usually 3000)
+- The Flask server will run on its configured port (check the `loadbalancer.py` file for the specific port)
 
-To learn more about Next.js, take a look at the following resources:
+To stop both applications, press `Ctrl+C` in the terminal where you ran the script.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
