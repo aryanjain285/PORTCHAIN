@@ -44,7 +44,7 @@ def fetch_port_news(start_date, end_date):
         'sortBy': 'relevancy',
         'apiKey': NEWSAPI_KEY,
         'language': 'en',
-        'pageSize': 5
+        'pageSize': 100
    
     }
     print(f"Debug: Sending request to NewsAPI with params: {params}")
