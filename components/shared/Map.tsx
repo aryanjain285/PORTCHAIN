@@ -6,7 +6,6 @@ import "leaflet/dist/leaflet.css";
 import "react-leaflet-cluster/lib/assets/MarkerCluster.css";
 import "react-leaflet-cluster/lib/assets/MarkerCluster.Default.css";
 
-// Define MarkerCluster type
 type MarkerCluster = any;
 
 interface Port {
@@ -16,12 +15,27 @@ interface Port {
   lat: number | string;
   lon: number | string;
   vessel_count_total: number;
+  vessel_count_container: number;
+  vessel_count_dry_bulk: number;
+  vessel_count_general_cargo: number;
+  vessel_count_RoRo: number;
+  import_tanker: number;
+  import_cargo: number;
+  import: number;
+  export_container: number;
+  export_dry_bulk: number;
+  export_general_cargo: number;
+  export_roro: number;
+  export_tanker: number;
+  export_cargo: number;
+  export: number;
+  resilience_cluster?: number;
 }
 
 interface MapProps {
   portsData: Port[];
   handlePortClick: (port: Port) => void;
-  getColor: (vesselCount: number) => string;
+  getColor: (resilienceIndex: number | undefined) => string;
 }
 
 const Map: React.FC<MapProps> = ({ portsData, handlePortClick, getColor }) => {
@@ -70,13 +84,13 @@ const Map: React.FC<MapProps> = ({ portsData, handlePortClick, getColor }) => {
 
 const PortMarker: React.FC<{
   port: Port;
-  getColor: (vesselCount: number) => string;
+  getColor: (resilienceIndex: number | undefined) => string;
   handlePortClick: (port: Port) => void;
 }> = ({ port, getColor, handlePortClick }) => {
   const markerIcon = L.divIcon({
     className: "custom-div-icon",
     html: `<div style='background-color:${getColor(
-      port.vessel_count_total
+      port.resilience_cluster
     )};'></div>`,
     iconSize: [30, 30],
   });
@@ -90,7 +104,10 @@ const PortMarker: React.FC<{
       }}
     >
       <Tooltip>
-        {port.portid} - Vessels: {port.vessel_count_total}
+        {port.portid} - Resilience Index:{" "}
+        {typeof port.resilience_cluster === "number"
+          ? port.resilience_cluster.toFixed(2)
+          : "N/A"}
       </Tooltip>
     </Marker>
   );
