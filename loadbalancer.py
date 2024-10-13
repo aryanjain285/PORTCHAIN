@@ -19,6 +19,7 @@ app = Flask(__name__)
 CORS(app)
 
 
+
 # Constants
 NEWSAPI_KEY = 'e3d6eb5452ac4bfabba25982e98c07d2'
 GROQ_API_KEY = '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'
@@ -43,7 +44,7 @@ def fetch_port_news(start_date, end_date):
         'sortBy': 'relevancy',
         'apiKey': NEWSAPI_KEY,
         'language': 'en',
-        'pageSize': 10
+        'pageSize': 5
    
     }
     print(f"Debug: Sending request to NewsAPI with params: {params}")
@@ -323,7 +324,7 @@ def process_ports(start_date, end_date, grouped_ports_path, port_names_path):
 # Flask route
 
 
-@app.route('/process', methods=['POST'])
+@app.route('/', methods=['POST'])
 def process():
     data = request.json
     print(f"Debug: Received request with data: {data}")
@@ -341,4 +342,4 @@ def process():
     return send_file(output_file, as_attachment=True)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(port=8000, debug=True)

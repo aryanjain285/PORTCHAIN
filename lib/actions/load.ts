@@ -2,6 +2,7 @@ import Papa from 'papaparse';
 
 interface Port {
   portid: string;
+  portname: string;
   ISO3: string;
   continent: string;
   lat: number;

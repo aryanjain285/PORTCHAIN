@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import {
@@ -14,12 +13,15 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { loadPortData } from "../lib/actions/load";
 import { Button } from "@/components/ui/button";
-import Papa from 'papaparse';
+import { X } from "lucide-react"; // Import the X icon from lucide-react
+import ChartWrapper from "@/components/shared/ChartWrapper";
+
 
 const Map = dynamic(() => import("../components/shared/Map"), { ssr: false });
 
 interface Port {
   portid: string;
+  portname: string;
   ISO3: string;
   continent: string;
   lat: number;
@@ -57,6 +59,7 @@ const Dashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+
   const fetchData = async () => {
     setIsLoading(true);
     setError(null);
@@ -78,36 +81,42 @@ const Dashboard: React.FC = () => {
     setSelectedPort(port);
   };
 
+  const handleClosePortDetails = () => {
+    setSelectedPort(null);
+  };
+
   // Function to handle the update button click
   const handleUpdateClick = async () => {
     setIsLoading(true);
     setError(null);
+  
     try {
-      const response = await fetch('http://localhost:5000/process', {
-        method: 'POST',
+      const response = await fetch('/api/update', {
+        method: 'POST', 
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           start_date: "2024-10-01",
-          end_date: "2024-10-05"
+          end_date: "2024-10-05",
         }),
       });
   
+      console.log("Request sent");
+  
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+        throw new Error(`HTTP error! Status: ${response.status}, Message: ${errorText}`);
       }
   
-      const csvBlob = await response.blob();
-      const url = window.URL.createObjectURL(csvBlob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = 'result.csv'; // Name for downloaded file
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
+      const result = await response.json();
+      console.log("Response from API route:", result);
+  
+      if (result.message === 'Update successful') {
+        // Reload the page to reflect the updated CSV
+        window.location.reload(); // This will refresh the page
+      }
+  
     } catch (err) {
       console.error("Error during update:", err);
       setError(err instanceof Error ? err.message : "An unknown error occurred");
@@ -115,6 +124,10 @@ const Dashboard: React.FC = () => {
       setIsLoading(false);
     }
   };
+  
+  
+  
+  
   
 
   useEffect(() => {
@@ -141,29 +154,43 @@ const Dashboard: React.FC = () => {
   return (
     <div className="flex flex-col h-screen bg-gray-900 text-white p-4">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">PORTCHAIN Dashboard</h1>
+        <h1 className="text-2xl font-bold">PortChain Dashboard</h1>
         <div className="flex space-x-2">
           <Button onClick={fetchData}>Refresh Data</Button>
-          <Button onClick={handleUpdateClick}>Update Ports</Button> {/* New update button */}
+          <Button onClick={handleUpdateClick}>Update Ports</Button>
         </div>
       </div>
-      <div className="flex flex-1 space-x-4">
-        <div className="w-2/3 bg-gray-800 rounded-lg p-4">
+      <div className="flex flex-1 space-x-4 overflow-hidden">
+        <div className="w-3/5 h-full bg-gray-800 rounded-lg p-4 overflow-hidden">
           <Map
             portsData={portsData}
             handlePortClick={handlePortClick}
             getColor={getColor}
           />
         </div>
-        <div className="w-1/3 space-y-4">
-          <Card>
+        <div className="w-2/5 flex flex-col space-y-4 overflow-hidden">
+        <div className="flex-shrink-0 max-h-[40%] overflow-y-auto">
+          <Card className="">
             <CardHeader>
-              <CardTitle>Port Details</CardTitle>
+              <div className="flex justify-between items-center">
+                <CardTitle>Port Details</CardTitle>
+                {selectedPort && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleClosePortDetails}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    <X size={20} />
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {selectedPort ? (
                 <div className="space-y-2">
                   <p><strong>Port ID:</strong> {selectedPort.portid}</p>
+                  <p><strong>Port Name:</strong> {selectedPort.portname}</p>
                   <p><strong>Country:</strong> {selectedPort.ISO3}</p>
                   <p><strong>Continent:</strong> {selectedPort.continent}</p>
                   <p><strong>Total Vessels:</strong> {selectedPort.vessel_count_total}</p>
@@ -192,7 +219,13 @@ const Dashboard: React.FC = () => {
               )}
             </CardContent>
           </Card>
-          <Card>
+          </div>
+          <div className="h-full ">
+          
+          <ChartWrapper portsData={portsData} />
+          </div>
+          
+          {/* <Card>
             <CardHeader>
               <CardTitle>Top 10 Ports by Vessel Count</CardTitle>
             </CardHeader>
@@ -204,14 +237,14 @@ const Dashboard: React.FC = () => {
                     .slice(0, 10)}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="portid" interval={0} angle={-45} textAnchor="end" height={70} />
+                  <XAxis dataKey="portname" interval={0} angle={-45} textAnchor="end" height={70} />
                   <YAxis />
                   <RechartsTooltip />
                   <Bar dataKey="vessel_count_total" fill="#8884d8" />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
       </div>
     </div>
